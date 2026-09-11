@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高度な対話的計算機</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .calculator-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .display {
+            background: #f5f5f5;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            word-wrap: break-word;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-operator {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-operator:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-function {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-function:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(72, 187, 120, 0.3);
+        }
+
+        .btn-clear {
+            background: #f56565;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .btn-clear:hover {
+            background: #e53e3e;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 101, 101, 0.3);
+        }
+
+        .btn-equals {
+            background: #764ba2;
+            color: white;
+            grid-column: span 2;
+            font-size: 20px;
+        }
+
+        .btn-equals:hover {
+            background: #63398c;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.3);
+        }
+
+        .variable-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .variable-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .variable-input input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn-set-var {
+            background: #4299e1;
+            color: white;
+            padding: 10px 20px;
+            flex: 0 0 auto;
+        }
+
+        .btn-set-var:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+        }
+
+        .variables-list {
+            display: grid;
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .variable-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            border-left: 4px solid #4299e1;
+        }
+
+        .variable-item code {
+            background: #e6fffa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .history-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: white;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            font-family: 'Courier New', monospace;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            background: #e6f0ff;
+            transform: translateX(5px);
+        }
+
+        .help-section {
+            background: #fef5e7;
+            border-left: 4px solid #f39c12;
+            border-radius: 6px;
+            padding: 15px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .help-section h4 {
+            color: #d68910;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .help-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .help-item {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            font-weight: bold;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .scroll-hint {
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .display {
+                font-size: 24px;
+            }
+
+            .button-group {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .help-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧮 高度な対話的計算機</h1>
+        <p class="subtitle">Advanced Interactive Calculator</p>
+
+        <div class="display" id="display">0</div>
+
+        <div class="error" id="error"></div>
+
+        <!-- タブ -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('calculator')">計算機</button>
+            <button class="tab-button" onclick="switchTab('variables')">変数</button>
+            <button class="tab-button" onclick="switchTab('history')">履歴</button>
+            <button class="tab-button" onclick="switchTab('help')">ヘルプ</button>
+        </div>
+
+        <!-- 計算機タブ -->
+        <div id="calculator" class="tab-content active">
+            <div class="calculator-section">
+                <div class="section-title">基本計算</div>
+                <div class="input-group">
+                    <input type="text" id="expressionInput" placeholder="例: 5 + 3, sqrt(16), sin(90)" onkeypress="handleKeyPress(event)">
+                    <button class="btn-equals" onclick="calculate()" style="flex: 0 0 auto; grid-column: auto;">計算</button>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-operator" onclick="appendToExpression('+')">+</button>
+                    <button class="btn-operator" onclick="appendToExpression('-')">-</button>
+                    <button class="btn-operator" onclick="appendToExpression('*')">×</button>
+                    <button class="btn-operator" onclick="appendToExpression('/')">/</button>
+
+                    <button class="btn-function" onclick="appendToExpression('**')">べき乗</button>
+                    <button class="btn-function" onclick="appendToExpression('%')">剰余</button>
+                    <button class="btn-function" onclick="appendToExpression('sqrt(')">√</button>
+                    <button class="btn-function" onclick="appendToExpression('abs(')">|x|</button>
+
+                    <button class="btn-function" onclick="appendToExpression('sin(')">sin</button>
+                    <button class="btn-function" onclick="appendToExpression('cos(')">cos</button>
+                    <button class="btn-function" onclick="appendToExpression('tan(')">tan</button>
+                    <button class="btn-function" onclick="appendToExpression('log(')">log</button>
+
+                    <button class="btn-function" onclick="appendToExpression('factorial(')">n!</button>
+                    <button class="btn-function" onclick="appendToExpression('pi')">π</button>
+                    <button class="btn-function" onclick="appendToExpression('e')">e</button>
+                    <button class="btn-function" onclick="appendToExpression('(')">(</button>
+
+                    <button class="btn-clear" onclick="clearExpression()">C (クリア)</button>
+                    <button class="btn-equals" onclick="calculate()">=</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 変数タブ -->
+        <div id="variables" class="tab-content">
+            <div class="variable-section">
+                <div class="section-title">変数設定</div>
+                <div class="variable-input">
+                    <input type="text" id="varName" placeholder="変数名（例：x, pi_value）" maxlength="20">
+                    <input type="number" id="varValue" placeholder="値" step="any">
+                    <button class="btn-set-var" onclick="setVariable()">設定</button>
+                </div>
+
+                <div id="variablesList" class="variables-list">
+                    <div style="color: #999; text-align: center; padding: 20px;">変数が設定されていません</div>
+                </div>
+                <div class="scroll-hint">変数は計算式内で使用できます（例：x + 10）</div>
+            </div>
+        </div>
+
+        <!-- 履歴タブ -->
+        <div id="history" class="tab-content">
+            <div class="history-section">
+                <div class="section-title">計算履歴</div>
+                <div id="historyList" class="history-list">
+                    <div style="color: #999; text-align: center; padding: 20px;">履歴がありません</div>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn-clear" onclick="clearHistory()">履歴をクリア</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ヘルプタブ -->
+        <div id="help" class="tab-content">
+            <div class="help-section">
+                <h4>📚 使用方法</h4>
+                <p style="margin-bottom: 10px;">計算式を入力して「計算」ボタンを押すか、Enterキーを押してください。</p>
+                
+                <h4 style="margin-top: 15px;">🔢 基本的な演算</h4>
+                <div class="help-grid">
+                    <div class="help-item">5 + 3</div>
+                    <div class="help-item">足し算</div>
+                    <div class="help-item">10 - 3</div>
+                    <div class="help-item">引き算</div>
+                    <div class="help-item">4 * 5</div>
+                    <div class="help-item">掛け算</div>
+                    <div class="help-item">20 / 4</div>
+                    <div class="help-item">割り算</div>
+                    <div class="help-item">2 ** 8</div>
+                    <div class="help-item">べき乗</div>
+                    <div class="help-item">17 % 5</div>
+                    <div class="help-item">剰余</div>
+                </div>
+
+                <h4 style="margin-top: 15px;">🔧 関数</h4>
+                <div class="help-grid">
+                    <div class="help-item">sqrt(16)</div>
+                    <div class="help-item">平方根</div>
+                    <div class="help-item">abs(-5)</div>
+                    <div class="help-item">絶対値</div>
+                    <div class="help-item">factorial(5)</div>
+                    <div class="help-item">階乗</div>
+                    <div class="help-item">sin(90)</div>
+                    <div class="help-item">サイン（度数法）</div>
+                    <div class="help-item">cos(0)</div>
+                    <div class="help-item">コサイン（度数法）</div>
+                    <div class="help-item">tan(45)</div>
+                    <div class="help-item">タンジェント（度数法）</div>
+                    <div class="help-item">log(100, 10)</div>
+                    <div class="help-item">対数（底を指定）</div>
+                </div>
+
+                <h4 style="margin-top: 15px;">📝 定数</h4>
+                <div class="help-grid">
+                    <div class="help-item">pi</div>
+                    <div class="help-item">π ≈ 3.14159</div>
+                    <div class="help-item">e</div>
+                    <div class="help-item">自然対数底 ≈ 2.71828</div>
+                </div>
+
+                <h4 style="margin-top: 15px;">💡 変数の使用例</h4>
+                <div style="background: rgba(255, 255, 255, 0.5); padding: 12px; border-radius: 6px; margin-top: 10px; font-family: 'Courier New', monospace; font-size: 12px;">
+                    1. 「変数」タブで x = 5 を設定<br>
+                    2. 計算式に「x + 10」と入力<br>
+                    3. 結果：15
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数
+        let variables = {};
+        let history = [];
+        let currentDisplay = "0";
+
+        function switchTab(tabName) {
+            // すべてのタブコンテンツを非表示
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // 選択されたタブを表示
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function appendToExpression(value) {
+            const input = document.getElementById('expressionInput');
+            if (input.value === "0") {
+                input.value = value;
+            } else {
+                input.value += value;
+            }
+            input.focus();
+        }
+
+        function clearExpression() {
+            document.getElementById('expressionInput').value = '';
+            document.getElementById('expressionInput').focus();
+            hideError();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                calculate();
+            }
+        }
+
+        function calculate() {
+            const expression = document.getElementById('expressionInput').value.trim();
+            
+            if (!expression) {
+                showError("計算式を入力してください");
+                return;
+            }
+
+            try {
+                // 変数を置き換え
+                let evalExpr = expression;
+                for (const [varName, value] of Object.entries(variables)) {
+                    const regex = new RegExp(`\\b${varName}\\b`, 'g');
+                    evalExpr = evalExpr.replace(regex, value);
+                }
+
+                // 安全な評価のための関数定義
+                const mathFunctions = {
+                    sqrt: Math.sqrt,
+                    abs: Math.abs,
+                    sin: (deg) => Math.sin(deg * Math.PI / 180),
+                    cos: (deg) => Math.cos(deg * Math.PI / 180),
+                    tan: (deg) => Math.tan(deg * Math.PI / 180),
+                    log: (a, base = 10) => Math.log(a) / Math.log(base),
+                    factorial: factorial,
+                    pi: Math.PI,
+                    e: Math.E,
+                    floor: Math.floor,
+                    ceil: Math.ceil,
+                    round: Math.round
+                };
+
+                // 評価
+                const result = Function('"use strict"; return (' + evalExpr + ')')
+                    .call(mathFunctions);
+
+                // 結果を表示
+                const displayResult = typeof result === 'number' 
+                    ? (Number.isInteger(result) ? result : result.toFixed(10).replace(/\.?0+$/, ''))
+                    : result;
+
+                currentDisplay = displayResult;
+                document.getElementById('display').textContent = displayResult;
+                
+                // 履歴に追加
+                addToHistory(expression, displayResult);
+                
+                // 入力をクリア
+                document.getElementById('expressionInput').value = '';
+                hideError();
+
+            } catch (error) {
+                showError("計算エラー: " + error.message);
+            }
+        }
+
+        function factorial(n) {
+            if (n < 0) throw new Error("負の数の階乗は計算できません");
+            if (!Number.isInteger(n)) throw new Error("階乗は整数でのみ計算できます");
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) result *= i;
+            return result;
+        }
+
+        function setVariable() {
+            const varName = document.getElementById('varName').value.trim();
+            const varValue = parseFloat(document.getElementById('varValue').value);
+
+            if (!varName) {
+                showError("変数名を入力してください");
+                return;
+            }
+
+            if (isNaN(varValue)) {
+                showError("値は数値である必要があります");
+                return;
+            }
+
+            if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(varName)) {
+                showError("変数名は英数字と下線のみ使用できます");
+                return;
+            }
+
+            variables[varName] = varValue;
+            document.getElementById('varName').value = '';
+            document.getElementById('varValue').value = '';
+            updateVariablesList();
+            hideError();
+        }
+
+        function updateVariablesList() {
+            const list = document.getElementById('variablesList');
+            
+            if (Object.keys(variables).length === 0) {
+                list.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">変数が設定されていません</div>';
+                return;
+            }
+
+            list.innerHTML = Object.entries(variables)
+                .map(([name, value]) => `
+                    <div class="variable-item">
+                        <code>${name}</code> = ${value}
+                        <span style="float: right; cursor: pointer; color: #e53e3e;" onclick="deleteVariable('${name}')">✕</span>
+                    </div>
+                `)
+                .join('');
+        }
+
+        function deleteVariable(varName) {
+            delete variables[varName];
+            updateVariablesList();
+        }
+
+        function addToHistory(expression, result) {
+            history.unshift({ expression, result });
+            if (history.length > 50) history.pop();
+            updateHistoryList();
+        }
+
+        function updateHistoryList() {
+            const list = document.getElementById('historyList');
+            
+            if (history.length === 0) {
+                list.innerHTML = '<div style="color: #999; text-align: center; padding: 20px;">履歴がありません</div>';
+                return;
+            }
+
+            list.innerHTML = history
+                .map((item, index) => `
+                    <div class="history-item" onclick="useHistoryItem('${item.expression.replace(/'/g, "\\'")}')">
+                        <div>${item.expression}</div>
+                        <div style="color: #999; font-size: 12px;">= ${item.result}</div>
+                    </div>
+                `)
+                .join('');
+        }
+
+        function useHistoryItem(expression) {
+            document.getElementById('expressionInput').value = expression;
+            document.getElementById('expressionInput').focus();
+        }
+
+        function clearHistory() {
+            if (confirm('履歴をクリアしますか？')) {
+                history = [];
+                updateHistoryList();
+            }
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('error').classList.remove('show');
+        }
+
+        // 初期化
+        document.getElementById('expressionInput').focus();
+    </script>
+</body>
+</html>
