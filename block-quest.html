@@ -1,0 +1,1478 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f4f7ed">
+<title>Block Quest</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;color:#294434;background:#f4f7ed}
+*{box-sizing:border-box}body{margin:0}
+button,select,input{font:inherit;color:inherit;min-height:44px}
+button{cursor:pointer;touch-action:manipulation;border:1px solid #d6e2cb;border-radius:8px;background:#fff;padding:8px 12px}
+button:disabled{opacity:.4}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #3986c4}
+header,main,footer{max-width:1300px;margin:auto;padding:18px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:25px;margin:0}
+h1 small{font-size:11px;display:block;color:#769266;margin-top:6px}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+select{border:1px solid #d6e2cb;border-radius:8px;background:#fff;max-width:100%}
+main{padding-top:0}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.panel{background:white;border:1px solid #e0e8d8;border-radius:16px;overflow:hidden}
+h2{font-size:20px;margin:0 0 12px}
+.head{padding:20px}
+.head p{font-size:13px;line-height:1.9;margin:0;color:#7d8974}
+#world{width:100%;max-height:440px;display:block;background:linear-gradient(#e4f1e4,#f1f6dc)}
+.goals{padding:14px;display:flex;gap:6px;flex-wrap:wrap}
+.goal{padding:6px 9px;background:#f0f3e8;font-size:11px;border-radius:6px}
+.done{color:#477532;background:#e7f2d8}
+.note{padding:16px;background:#f4f8eb;font-size:13px;line-height:1.8;min-height:76px;white-space:pre-line}
+.error{background:#fff0df;color:#915d30}
+.editor{display:grid;grid-template-columns:128px minmax(0,1fr);min-height:365px}
+.palette{padding:12px 8px;background:#fbfcf7;border-right:1px solid #e0e8d8}
+.palette button{display:block;width:100%;font-size:12px;margin:0 0 10px;text-align:left;font-weight:600}
+.workspace{padding:14px;overflow:auto;background-color:#fafcf7;background-image:radial-gradient(#dfe6d5 1px,transparent 1px);background-size:13px 13px;max-height:500px}
+.start{border-radius:8px;background:#e4ebd5;padding:12px;font-size:12px;margin-bottom:10px}
+.node{min-width:175px;margin-bottom:9px;border-radius:7px}
+.block{padding:5px 7px;border:1px solid #0001;border-radius:7px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:12px}
+.label{flex:1;white-space:nowrap}
+.actions{display:flex;margin-left:auto}
+.actions button{padding:0 5px;min-width:29px;min-height:38px;font-size:12px;background:transparent;border:0}
+.move,.left,.right{background:#e4edfd;color:#476fa8}
+.mine{background:#f8e8d4;color:#9c733e}
+.place{background:#e4efdb;color:#5f8545}
+.repeat{background:#eee3fa;color:#8e65ae}
+.if{background:#fff0d2;color:#9e7b2c}
+.body{border-left:5px solid #bca0d4;border-bottom:6px solid #bca0d4;padding:12px 6px 3px 10px;background:#fff8}
+.if>.body{border-color:#dfc478}
+.block input{width:43px;min-height:36px;border:1px solid #0001;border-radius:5px;text-align:center}
+.block select{min-height:36px;font-size:11px;max-width:115px}
+.insert{width:100%;border:1px dashed #bccfa5;font-size:10px;background:#fff8;margin:5px 0 10px}
+.insert.selected{background:#e7f3d6;border-color:#7ba35a}
+.active>.block{outline:3px solid #e4b944;background:#fff4c9}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:14px;border-top:1px solid #e0e8d8}
+.primary{background:#d8ef8e;border-color:#c0d778;font-weight:700}
+.controls .primary{flex:1;min-width:130px}
+.toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:12px 15px;border-bottom:1px solid #e0e8d8;font-size:11px}
+.toolbar h2{font-size:16px;margin:0}
+.small{font-size:11px}
+details{margin-top:15px;border:1px solid #e0e8d8;border-radius:12px;padding:12px 16px;background:#fff}
+summary{cursor:pointer;min-height:35px;line-height:35px;font-size:12px}
+details p,details li{font-size:12px;line-height:1.9}
+#trace{max-height:180px;overflow:auto}
+#paint{padding:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11px}
+#paint input{min-height:auto}
+.bottom{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 0;font-size:12px;color:#82916f}
+footer{font-size:10px;color:#98a68a;line-height:1.8}
+#next{margin:10px 0 0}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);width:max-content;max-width:90%;padding:12px 20px;background:#294c39;color:white;border-radius:10px;font-size:12px;z-index:20}
+[hidden]{display:none!important}
+@media(max-width:900px){
+.layout{grid-template-columns:minmax(0,1fr)}
+#world{max-height:360px}
+.editor{grid-template-columns:150px minmax(0,1fr)}
+}
+@media(max-width:500px){
+header,main,footer{padding:12px}
+h1{font-size:22px}header nav{width:100%}
+#lesson{flex:1;width:190px}
+h2{font-size:18px}.head{padding:16px}.head p{font-size:12px}
+.editor{grid-template-columns:105px minmax(0,1fr)}
+.palette{padding:12px 5px}.palette button{font-size:10px;padding:9px 6px}
+.workspace{padding:12px 6px;max-height:430px}
+.block{font-size:10px;padding:4px;gap:3px}
+.block select{max-width:100px}.node{min-width:175px}
+.controls{gap:6px}.controls button{font-size:12px}.controls select{font-size:11px}
+.note{font-size:12px}.bottom{font-size:11px}#world{max-height:310px}
+}
+</style>
+</head>
+<body>
+<header>
+<h1>🌿 BLOCK QUEST<small>きみのコードで、世界がうごく。</small></h1>
+<nav>
+<select id="lesson" aria-label="ミッション"></select>
+<select id="player" aria-label="プレイヤー">
+<option value="0">プレイヤー1</option>
+<option value="1">プレイヤー2</option>
+</select>
+</nav>
+</header>
+
+<main>
+<div class="layout">
+<section class="panel">
+<div class="head">
+<h2 id="title"></h2>
+<p id="description"></p>
+</div>
+
+<div id="world-stage">
+<svg id="world" viewBox="0 0 760 490" role="img" aria-label="ブロックワールド"></svg>
+<div id="direction-label" style="padding:8px 16px;font-size:11px;background:#edf5e4"></div>
+</div>
+
+<div id="paint" hidden>
+<label><input type="checkbox" id="editing"> マップ編集</label>
+<select id="brush" aria-label="置くもの">
+<option value=".">草</option>
+<option value="#">石</option>
+<option value="~">水</option>
+<option value="B">木</option>
+<option value="gem">クリスタル</option>
+<option value="start">ロボット</option>
+<option value="goal">ゴール</option>
+<option value="rotate">ロボットの向き</option>
+</select>
+<button id="restore">島をもどす</button>
+</div>
+
+<div id="goals" class="goals"></div>
+<div class="note" id="message" role="status" aria-live="polite"></div>
+<div class="controls">
+<button id="hint">✧ ヒント</button>
+<button id="next">次のミッション →</button>
+<label class="small"><input type="checkbox" id="numbers"> マス番号</label>
+</div>
+</section>
+
+<section class="panel">
+<div class="toolbar">
+<h2>⌘ プログラム</h2>
+<span id="count"></span>
+<button id="undo" aria-label="編集をもどす">↶</button>
+<button id="clear">全部はずす</button>
+</div>
+<div class="editor">
+<aside class="palette" id="palette"></aside>
+<div class="workspace">
+<div class="start">⚑ スタートしたとき</div>
+<div id="program"></div>
+</div>
+</div>
+<div class="controls">
+<button id="run" class="primary">▶ スタート</button>
+<button id="step">▸| 1つずつ</button>
+<button id="reset" aria-label="最初にもどす">↺</button>
+<select id="speed" aria-label="はやさ">
+<option value="750">ゆっくり</option>
+<option value="400" selected>ふつう</option>
+<option value="100">はやい</option>
+</select>
+<span id="steps" class="small"></span>
+</div>
+</section>
+</div>
+
+<div class="bottom">
+<span id="progress"></span>
+<span id="save-status"></span>
+</div>
+
+<details>
+<summary>あそびかた・ブロックの使いかた</summary>
+<ol>
+<li>左のブロックをタップすると、命令が追加されます。</li>
+<li>上から順に動きます。↑ ↓ で順番を変え、× ではずせます。</li>
+<li>くり返しや「もし」を追加すると、中が追加先になります。外に命令を追加するときは、外側の「ここに追加」を押してください。</li>
+<li>「前」「右」「左」は、ロボットから見た向きです。白い三角が前を示します。</li>
+<li>水にブロックを置くと橋、地面に置くと木のブロックになります。</li>
+<li>全部の命令が終わった場所でクリアを判定します。「1つずつ」では最後の命令の後、もう一度押すと終了判定します。</li>
+<li>クリアで★★、少ないブロックにまとめると★★★。ヒントを見ても星は減りません。</li>
+</ol>
+</details>
+
+<details>
+<summary>セーブを書き出す・読みこむ</summary>
+<p>2人分の続きはこのブラウザに自動保存します。端末を替えるときはファイルで引きつげます。ブラウザのデータを消すとセーブも消えます。</p>
+<button id="export">書き出す ↓</button>
+<button id="import">読みこむ ↑</button>
+<input id="import-file" type="file" accept=".json,application/json" hidden>
+</details>
+
+<details>
+<summary>動きのきろく</summary>
+<ol id="trace"></ol>
+</details>
+</main>
+
+<footer>
+オリジナルの学習アプリです。Minecraft公式製品ではなく、Mojang / Microsoft とは関係ありません。
+</footer>
+<div id="toast" role="status" hidden></div>
+
+<script>
+/* Block Quest: deterministic learning engine */
+(function(root,factory){
+  const api=factory();
+  if(typeof module==="object"&&module.exports)module.exports=api;
+  else root.BlockQuest=api;
+})(typeof globalThis!=="undefined"?globalThis:this,function(){
+"use strict";
+
+const SIZE=7,MAX_BLOCKS=80,MAX_DEPTH=5,MAX_STEPS=2000;
+const TYPES=["move","left","right","mine","place","repeat","if"];
+const CONDITIONS=["rock","water","clear","gem"];
+const DIRS=[[1,0],[0,1],[-1,0],[0,-1]];
+const key=(x,y)=>x+","+y;
+const clone=value=>JSON.parse(JSON.stringify(value));
+
+const map=(rocks=[],water=[])=>{
+  const rows=Array.from({length:SIZE},()=>Array(SIZE).fill("."));
+  water.forEach(([x,y])=>{rows[y][x]="~";});
+  rocks.forEach(([x,y])=>{rows[y][x]="#";});
+  return rows.map(row=>row.join(""));
+};
+const column=x=>Array.from({length:SIZE},(_,y)=>[x,y]);
+
+const level=(id,title,topic,description,hint,props={})=>({
+  id,title,topic,description,hint,
+  start:{x:1,y:3,dir:0},
+  goal:{x:5,y:3},
+  map:map(),
+  gems:[],
+  require:[],
+  mined:0,
+  bridges:0,
+  available:["move","left","right"],
+  target:6,
+  ...props
+});
+
+const basic=["move","left","right","mine","place"];
+const loop=[...basic,"repeat"];
+const all=[...loop,"if"];
+
+const LEVELS=[
+  level(
+    "first","はじめの一歩","じゅんばん",
+    "前に4マス進んで、金色のゴールへ行こう。",
+    "「前へすすむ」を4こならべて、▶ スタートをおそう。",
+    {target:4}
+  ),
+  level(
+    "corner","まがって、見つけて","じゅんばん",
+    "2つのクリスタルを集めて、角をまがろう。",
+    "3マス進む → 右をむく → 3マス進む。右はロボットから見た右だよ。",
+    {
+      start:{x:1,y:1,dir:0},
+      goal:{x:4,y:4},
+      gems:[[4,1],[4,4]],
+      target:7
+    }
+  ),
+  level(
+    "miner","はじめての採くつ","こわす",
+    "石を1こほって、むこうのゴールへ。",
+    "石の1マス手前まで進んで、「前をほる」。そのあと、また進もう。",
+    {
+      map:map([[3,3]]),
+      mined:1,
+      available:basic,
+      target:5
+    }
+  ),
+  level(
+    "bridge","川に橋をかけよう","つくる",
+    "水の上にブロックを1こ置いて、川をわたろう。",
+    "川の手前まで進んで、「前におく」。水の上では、歩ける橋になるよ。",
+    {
+      map:map([],column(3)),
+      bridges:1,
+      available:basic,
+      target:5
+    }
+  ),
+  level(
+    "repeat","くり返しのまほう","くり返し",
+    "「くり返す」を使って、5マス先へ。",
+    "「くり返す」を5回にして、中に「前へすすむ」を1こ入れよう。",
+    {
+      goal:{x:6,y:3},
+      available:loop,
+      require:["repeat"],
+      target:2
+    }
+  ),
+  level(
+    "square","しかくい大ぼうけん","くり返し",
+    "3つのクリスタルを集めよう。くり返しの中に、くり返しも入れられるよ。",
+    "「4回すすむ → 右をむく」を、3回くり返してみよう。",
+    {
+      start:{x:1,y:1,dir:0},
+      goal:{x:1,y:5},
+      gems:[[5,1],[5,5],[1,5]],
+      available:loop,
+      require:["repeat"],
+      target:4
+    }
+  ),
+  level(
+    "tunnel","トンネルをつくれ","くり返し",
+    "ならんだ3この石をほって進もう。",
+    "「前をほる → 前へすすむ」を3回くり返し、さいごにもう1マス進もう。",
+    {
+      map:map([[2,3],[3,3],[4,3]]),
+      mined:3,
+      available:loop,
+      require:["repeat"],
+      target:4
+    }
+  ),
+  level(
+    "if-rock","もし、石があったら？","もし〜なら",
+    "石があるときだけほって、5マス進もう。",
+    "「5回くり返す」の中に「もし前が石なら → ほる」と「すすむ」を入れよう。「すすむ」は、もしの外だよ。",
+    {
+      goal:{x:6,y:3},
+      map:map([[3,3],[5,3]]),
+      mined:2,
+      available:all,
+      require:["if"],
+      target:4
+    }
+  ),
+  level(
+    "if-water","川を見つけるロボット","もし〜なら",
+    "水があるときだけ橋をかけて、2本の川をわたろう。",
+    "「もし前が水なら」の中に「前におく」。そのあと1マスすすむ、を5回くり返そう。",
+    {
+      goal:{x:6,y:3},
+      map:map([],[...column(3),...column(5)]),
+      bridges:2,
+      available:all,
+      require:["if"],
+      target:4
+    }
+  ),
+  level(
+    "expedition","探けんマスター","組み合わせ",
+    "石2こと水2マスをこえて、3つのクリスタルを集めよう。",
+    "1歩ごとに「もし石ならほる」「もし水ならおく」「すすむ」。4歩進んで右をむく、を3回くり返そう。",
+    {
+      start:{x:1,y:1,dir:0},
+      goal:{x:1,y:5},
+      map:map([[4,1],[3,5]],[[3,1],[5,3]]),
+      gems:[[5,1],[5,5],[1,5]],
+      mined:2,
+      bridges:2,
+      available:all,
+      require:["repeat","if"],
+      target:8
+    }
+  ),
+  level(
+    "debug","バグをなおそう","デバッグ",
+    "このプログラムには、1かしょまちがいがあるよ。「1つずつ」でたしかめよう。",
+    "右にまがる回数は合っているかな？「4回」を「3回」にかえると、ゴールを通りすぎなくなるよ。",
+    {
+      start:{x:1,y:1,dir:0},
+      goal:{x:4,y:4},
+      gems:[[4,1],[4,4]],
+      available:all,
+      target:5,
+      starter:[
+        {type:"repeat",count:3,body:[{type:"move"}]},
+        {type:"right"},
+        {type:"repeat",count:4,body:[{type:"move"}]}
+      ]
+    }
+  ),
+  level(
+    "final","クリスタルの守り人","さいごの挑戦",
+    "島を1周しよう。石4こと水4マスをこえて、4つのクリスタルを集めよう。",
+    "「もし石ならほる」「もし水ならおく」「すすむ」を4回。そして右をむく。このまとまりを4回くり返そう。",
+    {
+      start:{x:1,y:1,dir:0},
+      goal:{x:1,y:1},
+      map:map(
+        [[4,1],[5,4],[2,5],[1,2]],
+        [[3,1],[5,3],[3,5],[1,3]]
+      ),
+      gems:[[5,1],[5,5],[1,5],[1,2]],
+      mined:4,
+      bridges:4,
+      available:all,
+      require:["repeat","if"],
+      target:8
+    }
+  )
+];
+
+const SANDBOX=level(
+  "sandbox","じゆうなワールド","じゆうにつくる",
+  "地面をタップして島をつくり、プログラムで探けんしよう。",
+  "マップ編集をONにして、石や水を置こう。スタート・ゴール・クリスタルも動かせるよ。",
+  {
+    map:map([[4,2],[4,4]],[[3,2],[3,3],[3,4]]),
+    available:all,
+    target:80
+  }
+);
+
+let serial=0;
+const id=()=>"b"+(++serial).toString(36);
+
+function normalizeProgram(input,allowed=TYPES){
+  let total=0;
+  function walk(nodes,depth){
+    if(!Array.isArray(nodes))
+      throw new Error("ブロックのデータが正しくありません。");
+    if(depth>MAX_DEPTH)
+      throw new Error("入れ子は5だんまでにしよう。");
+    return nodes.map(node=>{
+      if(++total>MAX_BLOCKS)
+        throw new Error("ブロックは80こまでにしよう。");
+      if(!node||!TYPES.includes(node.type)||!allowed.includes(node.type))
+        throw new Error("このミッションで使えないブロックがあります。");
+      const out={id:id(),type:node.type};
+      if(node.type==="repeat"){
+        if(!Number.isInteger(node.count)||node.count<1||node.count>20)
+          throw new Error("くり返しは1〜20回にしよう。");
+        out.count=node.count;
+        out.body=walk(node.body,depth+1);
+      }
+      if(node.type==="if"){
+        if(!CONDITIONS.includes(node.condition))
+          throw new Error("「もし」の条件が正しくありません。");
+        out.condition=node.condition;
+        out.body=walk(node.body,depth+1);
+      }
+      return out;
+    });
+  }
+  return walk(input,0);
+}
+
+function blocks(program){
+  return program.reduce(
+    (sum,node)=>sum+1+(node.body?blocks(node.body):0),0
+  );
+}
+
+function includes(program,type){
+  return program.some(
+    n=>n.type===type||(n.body&&includes(n.body,type))
+  );
+}
+
+function validateWorld(input){
+  if(!input||!Array.isArray(input.map)||input.map.length!==SIZE||
+     input.map.some(row=>typeof row!=="string"||
+       row.length!==SIZE||/[^.#~=B]/.test(row)))
+    throw new Error("ワールドは7×7マスで作ってね。");
+
+  const point=p=>p&&Number.isInteger(p.x)&&Number.isInteger(p.y)&&
+    p.x>=0&&p.x<SIZE&&p.y>=0&&p.y<SIZE;
+
+  if(!point(input.start)||!Number.isInteger(input.start.dir)||
+     input.start.dir<0||input.start.dir>3||!point(input.goal))
+    throw new Error("スタートかゴールの場所が正しくありません。");
+
+  if(![".","="].includes(input.map[input.start.y][input.start.x]))
+    throw new Error("スタートは歩ける地面に置こう。");
+
+  if(!Array.isArray(input.gems)||input.gems.length>SIZE*SIZE||
+     input.gems.some(p=>!Array.isArray(p)||p.length!==2||
+       !point({x:p[0],y:p[1]})))
+    throw new Error("クリスタルの場所が正しくありません。");
+
+  return {
+    map:input.map.slice(),
+    start:{...input.start},
+    goal:{...input.goal},
+    gems:Array.from(
+      new Map(input.gems.map(p=>[key(...p),p.slice()])).values()
+    )
+  };
+}
+
+function createState(def){
+  return {
+    map:def.map.map(r=>r.split("")),
+    x:def.start.x,
+    y:def.start.y,
+    dir:def.start.dir,
+    gems:new Set(def.gems.map(p=>key(...p))),
+    collected:0,
+    mined:0,
+    bridges:0,
+    placed:0,
+    steps:0,
+    events:0,
+    used:new Set(),
+    error:null,
+    visited:new Set([key(def.start.x,def.start.y)])
+  };
+}
+
+function front(state){
+  const d=DIRS[state.dir],x=state.x+d[0],y=state.y+d[1];
+  return {x,y,tile:state.map[y]?.[x]??null};
+}
+
+function check(state,condition){
+  const f=front(state);
+  if(condition==="rock")return f.tile==="#"||f.tile==="B";
+  if(condition==="water")return f.tile==="~";
+  if(condition==="clear")return f.tile==="."||f.tile==="=";
+  if(condition==="gem")return state.gems.has(key(f.x,f.y));
+  return false;
+}
+
+function act(state,type){
+  if(type==="left"){
+    state.dir=(state.dir+3)%4;
+    return "左をむいたよ。";
+  }
+  if(type==="right"){
+    state.dir=(state.dir+1)%4;
+    return "右をむいたよ。";
+  }
+  const f=front(state);
+  if(f.tile===null)
+    throw new Error("島のはしだよ。むきをかえるか、すすむ回数をへらそう。");
+
+  if(type==="move"){
+    if(f.tile==="~")
+      throw new Error("前は水だよ。「前におく」で橋をかけよう。");
+    if(f.tile==="#"||f.tile==="B")
+      throw new Error("前にブロックがあるよ。「前をほる」で道をつくろう。");
+    state.x=f.x;
+    state.y=f.y;
+    state.visited.add(key(f.x,f.y));
+    if(state.gems.delete(key(f.x,f.y))){
+      state.collected++;
+      return "クリスタルを見つけた！";
+    }
+    return "1マスすすんだよ。";
+  }
+
+  if(type==="mine"){
+    if(f.tile!=="#"&&f.tile!=="B")
+      throw new Error("前にほれるブロックがないよ。ほる場所と順番を見てみよう。");
+    if(f.tile==="#")state.mined++;
+    state.map[f.y][f.x]=".";
+    return "ブロックをほったよ！";
+  }
+
+  if(type==="place"){
+    if(f.tile==="~"){
+      state.map[f.y][f.x]="=";
+      state.bridges++;
+      return "水の上に橋ができた！";
+    }
+    if(f.tile==="."){
+      state.map[f.y][f.x]="B";
+      state.placed++;
+      return "ブロックを置いたよ。歩くには、ほってね。";
+    }
+    throw new Error("前にはもうブロックがあるよ。ほかの場所に置いてみよう。");
+  }
+  throw new Error("知らない命令です。");
+}
+
+function* execute(program,state){
+  let executingId=null;
+  function tick(node){
+    executingId=node.id;
+    if(++state.events>MAX_STEPS)
+      throw new Error("動きが多すぎるよ。くり返す回数をへらしてみよう。");
+    state.used.add(node.type);
+  }
+  function* walk(nodes){
+    for(const node of nodes){
+      if(node.type==="repeat"){
+        for(let i=0;i<node.count;i++){
+          tick(node);
+          yield {
+            id:node.id,
+            type:node.type,
+            message:"くり返し "+(i+1)+" / "+node.count+"回"
+          };
+          yield* walk(node.body);
+        }
+      }else if(node.type==="if"){
+        tick(node);
+        const matched=check(state,node.condition);
+        yield {
+          id:node.id,
+          type:node.type,
+          matched,
+          message:matched?
+            "条件にあった！ 中の命令をうごかすよ。":
+            "条件にあわないので、中をとばすよ。"
+        };
+        if(matched)yield* walk(node.body);
+      }else{
+        tick(node);
+        state.steps++;
+        yield {
+          id:node.id,
+          type:node.type,
+          message:act(state,node.type)
+        };
+      }
+    }
+  }
+  try{
+    yield* walk(program);
+  }catch(error){
+    state.error=error.message;
+    yield {id:executingId,type:"error",message:error.message};
+  }
+}
+
+function outcome(def,state,program){
+  const goals=[
+    {
+      text:"金色のゴールへ行く",
+      done:state.x===def.goal.x&&state.y===def.goal.y
+    },
+    ...(def.gems.length?[{
+      text:"クリスタル "+state.collected+" / "+def.gems.length,
+      done:state.gems.size===0
+    }]:[]),
+    ...(def.mined?[{
+      text:"石をほる "+Math.min(state.mined,def.mined)+" / "+def.mined,
+      done:state.mined>=def.mined
+    }]:[]),
+    ...(def.bridges?[{
+      text:"橋をつくる "+Math.min(state.bridges,def.bridges)+" / "+def.bridges,
+      done:state.bridges>=def.bridges
+    }]:[]),
+    ...def.require.map(t=>({
+      text:t==="repeat"?"くり返しを使う":"「もし」を使う",
+      done:state.used.has(t)
+    }))
+  ];
+  return {
+    won:!state.error&&goals.every(g=>g.done),
+    goals,
+    stars:blocks(program)<=def.target?3:2
+  };
+}
+
+function simulate(def,input){
+  const program=normalizeProgram(input,def.available);
+  const state=createState(def);
+  const events=Array.from(execute(program,state));
+  return {state,events,...outcome(def,state,program)};
+}
+
+function findList(program,parentId){
+  if(!parentId)return program;
+  for(const node of program){
+    if(node.id===parentId)return node.body||null;
+    if(node.body){
+      const found=findList(node.body,parentId);
+      if(found)return found;
+    }
+  }
+  return null;
+}
+
+function findNode(program,id){
+  for(let i=0;i<program.length;i++){
+    if(program[i].id===id)
+      return {node:program[i],list:program,index:i};
+    if(program[i].body){
+      const found=findNode(program[i].body,id);
+      if(found)return found;
+    }
+  }
+  return null;
+}
+
+function newNode(type){
+  return {
+    id:id(),type,
+    ...(type==="repeat"?{count:3,body:[]}:{}),
+    ...(type==="if"?{condition:"rock",body:[]}: {})
+  };
+}
+
+function freshProfile(){
+  return {level:0,programs:{},completed:{},world:null};
+}
+
+function cleanProfile(input){
+  const result=freshProfile();
+  if(!input||typeof input!=="object")return result;
+  result.level=Number.isInteger(input.level)&&
+    input.level>=0&&input.level<=LEVELS.length?input.level:0;
+
+  for(const def of [...LEVELS,SANDBOX]){
+    if(input.programs?.[def.id]){
+      try{
+        result.programs[def.id]=normalizeProgram(
+          input.programs[def.id],def.available
+        );
+      }catch(_){}
+    }
+    const score=input.completed?.[def.id];
+    if(def.id!=="sandbox"&&Number.isInteger(score)&&score>=1&&score<=3)
+      result.completed[def.id]=score;
+  }
+  if(input.world){
+    try{result.world=validateWorld(input.world);}catch(_){}
+  }
+  return result;
+}
+
+function parseSave(input){
+  if(!input||input.app!=="block-quest"||input.version!==1||
+     !Array.isArray(input.profiles))
+    throw new Error("Block Quest のセーブファイルをえらんでね。");
+  return {
+    app:"block-quest",
+    version:1,
+    active:input.active===1?1:0,
+    profiles:[
+      cleanProfile(input.profiles[0]),
+      cleanProfile(input.profiles[1])
+    ]
+  };
+}
+
+function freshSave(){
+  return {
+    app:"block-quest",
+    version:1,
+    active:0,
+    profiles:[freshProfile(),freshProfile()]
+  };
+}
+
+return {
+  SIZE,MAX_BLOCKS,MAX_DEPTH,MAX_STEPS,TYPES,CONDITIONS,DIRS,
+  LEVELS,SANDBOX,key,clone,normalizeProgram,blocks,includes,
+  validateWorld,createState,front,check,act,execute,outcome,
+  simulate,findList,findNode,newNode,freshProfile,cleanProfile,
+  parseSave,freshSave
+};
+});
+</script>
+
+<script>
+(function(){
+"use strict";
+
+const E=window.BlockQuest;
+const $=id=>document.getElementById(id);
+const esc=v=>String(v).replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
+
+const names={
+  move:"↑ 前へすすむ",
+  left:"↶ 左をむく",
+  right:"↷ 右をむく",
+  mine:"⛏ 前をほる",
+  place:"▣ 前におく",
+  repeat:"↻ くり返す",
+  if:"◇ もし〜なら"
+};
+
+const conditions={
+  rock:"前が石",
+  water:"前が水",
+  clear:"前に進める",
+  gem:"前にクリスタル"
+};
+
+const key="block-quest-save-v1";
+const directions=["↘","↙","↖","↗"];
+let data=E.freshSave();
+
+try{
+  const raw=localStorage.getItem(key);
+  if(raw)data=E.parseSave(JSON.parse(raw));
+}catch(_){}
+
+let profile,def,index,program=[],state,target="",history=[];
+let runner=null,timer=null,mode="ready",active=null,trace=[];
+let showNumbers=false,toastTimer;
+
+function save(){
+  try{
+    localStorage.setItem(key,JSON.stringify(data));
+    $("save-status").textContent="✓ この端末に自動セーブ";
+  }catch(_){
+    $("save-status").textContent="自動セーブ不可・ファイルに書き出してね";
+  }
+}
+
+function notify(text){
+  $("toast").textContent=text;
+  $("toast").hidden=false;
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>$("toast").hidden=true,4000);
+}
+
+function message(text,error=false){
+  $("message").textContent=text;
+  $("message").classList.toggle("error",error);
+}
+
+function stop(){
+  clearTimeout(timer);
+  timer=null;
+  if(mode==="running")mode="paused";
+}
+
+function reset(silent=false){
+  stop();
+  runner=null;
+  mode="ready";
+  active=null;
+  state=E.createState(def);
+  trace=[];
+  renderWorld();
+  status();
+  if(!silent)
+    message("最初にもどしたよ。命令を変えて、もう一度ためそう。");
+}
+
+function loadLevel(value){
+  stop();
+  index=Math.max(0,Math.min(12,Number(value)));
+  profile=data.profiles[data.active];
+  profile.level=index;
+  def=index===12?
+    {...E.SANDBOX,...(profile.world||{})}:E.LEVELS[index];
+  program=E.normalizeProgram(
+    profile.programs[def.id]||def.starter||[],def.available
+  );
+  target="";
+  history=[];
+  $("lesson").value=String(index);
+  $("player").value=String(data.active);
+  $("title").textContent=
+    (index===12?"∞":String(index+1).padStart(2,"0"))+"  "+def.title;
+  $("description").textContent=def.description;
+  $("paint").hidden=index!==12;
+  $("editing").checked=false;
+  $("next").textContent=index>=11?
+    "はじめのミッションへ →":"次のミッション →";
+  $("palette").innerHTML=def.available.map(t=>
+    `<button class="${t}" data-add="${t}">${names[t]}</button>`
+  ).join("");
+  renderProgram();
+  reset(true);
+  message(def.starter?
+    "「1つずつ」で、どこがまちがっているか調べよう。":
+    "左のブロックをタップして、命令をならべよう。"
+  );
+  save();
+}
+
+function renderProgram(){
+  if(!E.findList(program,target))target="";
+  function list(nodes,parent){
+    return nodes.map((n,i)=>{
+      let label=`<span class="label">${names[n.type]}</span>`;
+      if(n.type==="repeat"){
+        label=
+          `<input aria-label="くり返す回数" type="number" `+
+          `inputmode="numeric" min="1" max="20" value="${n.count}" `+
+          `data-count="${n.id}"><span class="label">回くり返す</span>`;
+      }
+      if(n.type==="if"){
+        label=
+          `もし<select aria-label="条件" data-condition="${n.id}">`+
+          Object.entries(conditions).map(([v,t])=>
+            `<option value="${v}" ${v===n.condition?"selected":""}>${t}</option>`
+          ).join("")+
+          `</select><span class="label">なら</span>`;
+      }
+      return (
+        `<div class="node ${n.type}" data-node="${n.id}">`+
+        `<div class="block">${label}<span class="actions">`+
+        `<button data-up="${n.id}" ${i===0?"disabled":""} aria-label="上へ">↑</button>`+
+        `<button data-down="${n.id}" ${i===nodes.length-1?"disabled":""} aria-label="下へ">↓</button>`+
+        `<button data-remove="${n.id}" aria-label="はずす">×</button>`+
+        `</span></div>`+
+        (n.body?`<div class="body">${list(n.body,n.id)}</div>`:"")+
+        `</div>`
+      );
+    }).join("")+
+      `<button class="insert ${target===parent?"selected":""}" `+
+      `data-target="${parent}" aria-pressed="${target===parent}">`+
+      (target===parent?"＋ ここに追加されるよ":"＋ ここに追加")+
+      `</button>`;
+  }
+  $("program").innerHTML=list(program,"")+
+    (program.length?"":'<p class="small">左のブロックをタップしよう！</p>');
+  $("count").textContent=E.blocks(program)+" / 80こ";
+  $("undo").disabled=!history.length;
+  $("clear").disabled=!program.length;
+}
+
+function status(){
+  const result=E.outcome(def,state,program);
+  $("goals").innerHTML=result.goals.map(g=>
+    `<span class="goal ${g.done?"done":""}">`+
+    `${g.done?"✓":"○"} ${esc(g.text)}</span>`
+  ).join("");
+  $("steps").textContent=state.steps+" アクション";
+  $("run").textContent=mode==="running"?
+    "Ⅱ 一時停止":mode==="paused"?"▶ つづきから":"▶ スタート";
+  $("step").disabled=mode==="running";
+  $("undo").disabled=mode==="running"||!history.length;
+  $("clear").disabled=mode==="running"||!program.length;
+
+  document.querySelectorAll(
+    "#palette button,#program button,#program input,#program select,#editing,#brush,#restore"
+  ).forEach(el=>{
+    const loc=E.findNode(program,el.dataset.up||el.dataset.down);
+    el.disabled=mode==="running"||
+      Boolean(el.dataset.up&&loc?.index===0)||
+      Boolean(el.dataset.down&&loc?.index===loc?.list.length-1);
+  });
+
+  document.querySelectorAll("[data-node]").forEach(el=>
+    el.classList.toggle("active",el.dataset.node===active)
+  );
+  $("trace").innerHTML=trace.slice(-100).map(t=>
+    "<li>"+esc(t)+"</li>"
+  ).join("");
+  $("trace").start=Math.max(1,trace.length-99);
+  const complete=E.LEVELS.filter(l=>profile.completed[l.id]).length;
+  $("progress").textContent="✦ "+complete+" / 12 ミッションクリア";
+}
+
+function edit(change){
+  if(mode==="running")return;
+  const before=E.clone(program),oldTarget=target;
+  try{
+    change();
+    E.normalizeProgram(program,def.available);
+  }catch(e){
+    program=before;
+    target=oldTarget;
+    notify(e.message);
+    renderProgram();
+    return;
+  }
+  history.push(before);
+  if(history.length>40)history.shift();
+  profile.programs[def.id]=E.clone(program);
+  reset(true);
+  renderProgram();
+  save();
+  message("▶ スタートで、どんな動きになるかためしてみよう。");
+}
+
+function prepare(){
+  if(!program.length){
+    message("まずは「前へすすむ」をタップしてみよう。");
+    return false;
+  }
+  const empty=nodes=>nodes.some(n=>
+    n.body&&(!n.body.length||empty(n.body))
+  );
+  if(empty(program)){
+    message("くり返し・もしの中にも命令を入れてね。");
+    return false;
+  }
+  $("editing").checked=false;
+  reset(true);
+  runner=E.execute(program,state);
+  mode="paused";
+  return true;
+}
+
+function advance(){
+  const next=runner.next();
+  if(next.done){
+    stop();
+    runner=null;
+    mode="finished";
+    active=null;
+    const result=E.outcome(def,state,program);
+    if(result.won){
+      if(index!==12){
+        profile.completed[def.id]=Math.max(
+          profile.completed[def.id]||0,result.stars
+        );
+        save();
+      }
+      message(
+        "★".repeat(result.stars)+"☆".repeat(3-result.stars)+
+        "  やったね、クリア！\n"+
+        (result.stars===3?
+          "上手にコードを組み立てられたね！":
+          def.target+"ブロック以下にまとめると、もう1つ星がもらえるよ。")
+      );
+    }else{
+      message(
+        "実行がおわったよ。\nまだの目標："+
+        result.goals.filter(g=>!g.done).map(g=>g.text).join("・")
+      );
+    }
+    status();
+    return false;
+  }
+
+  const event=next.value;
+  active=event.id;
+  trace.push(event.message);
+  message(event.message,event.type==="error");
+  if(event.type==="error"){
+    stop();
+    mode="error";
+    runner=null;
+  }
+  renderWorld();
+  status();
+
+  const block=$("program").querySelector(".active>.block");
+  const box=document.querySelector(".workspace");
+  if(block){
+    const a=block.getBoundingClientRect();
+    const b=box.getBoundingClientRect();
+    if(a.bottom>b.bottom)box.scrollTop+=a.bottom-b.bottom+12;
+    else if(a.top<b.top)box.scrollTop-=b.top-a.top+12;
+  }
+  return event.type!=="error";
+}
+
+function tick(){
+  if(mode==="running"&&advance()&&mode==="running")
+    timer=setTimeout(tick,Number($("speed").value));
+}
+
+function run(){
+  if(mode==="running"){
+    stop();
+    status();
+    return;
+  }
+  if(mode!=="paused"||!runner)
+    if(!prepare())return;
+  mode="running";
+  status();
+  tick();
+}
+
+function paint(x,y){
+  if(index!==12||!$("editing").checked||mode==="running")return;
+  const world=E.validateWorld(profile.world||E.SANDBOX);
+  const brush=$("brush").value;
+
+  if(brush==="rotate"){
+    world.start.dir=(world.start.dir+1)%4;
+  }else if(brush==="start"){
+    world.start.x=x;
+    world.start.y=y;
+    world.map[y]=world.map[y].slice(0,x)+"."+world.map[y].slice(x+1);
+  }else if(brush==="goal"){
+    world.goal={x,y};
+  }else if(brush==="gem"){
+    const i=world.gems.findIndex(p=>p[0]===x&&p[1]===y);
+    if(i<0)world.gems.push([x,y]);
+    else world.gems.splice(i,1);
+  }else{
+    if(world.start.x===x&&world.start.y===y&&brush!=="."){
+      notify("ロボットのいるマスは地面にしておこう。");
+      return;
+    }
+    world.map[y]=world.map[y].slice(0,x)+brush+world.map[y].slice(x+1);
+  }
+
+  profile.world=E.validateWorld(world);
+  def={...E.SANDBOX,...profile.world};
+  save();
+  reset(true);
+  message("マップ編集をOFFにして、コードで探けんしよう。");
+}
+
+function renderWorld(){
+  const editing=def.id==="sandbox"&&$("editing").checked;
+  $("world-stage").classList.toggle("editing",editing);
+  const groundMap=state.map;
+  const xy=(x,y)=>[380+(x-y)*43,124+(x+y)*22];
+
+  const poly=(points,fill,extra="")=>
+    `<polygon points="${points}" fill="${fill}" ${extra}/>`;
+
+  function cube(cx,cy,w,h,lift,top,left,right,extra=""){
+    return `<g ${extra}>`+
+      poly(
+        `${cx-w},${cy} ${cx},${cy+h} ${cx},${cy+h+lift} ${cx-w},${cy+lift}`,
+        left
+      )+
+      poly(
+        `${cx},${cy+h} ${cx+w},${cy} ${cx+w},${cy+lift} ${cx},${cy+h+lift}`,
+        right
+      )+
+      poly(
+        `${cx},${cy-h} ${cx+w},${cy} ${cx},${cy+h} ${cx-w},${cy}`,
+        top,'class="tile-top"'
+      )+
+      "</g>";
+  }
+
+  const back=`
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1">
+      <stop stop-color="#e7f0e3"/>
+      <stop offset="1" stop-color="#f1f6dc"/>
+    </linearGradient>
+    <radialGradient id="light">
+      <stop stop-color="#fffdeb" stop-opacity=".85"/>
+      <stop offset="1" stop-color="#fffdeb" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+  </defs>
+  <title id="world-title">${esc(def.title)}のブロックワールド</title>
+  <desc id="world-description">
+    7×7の島。ロボットは左から${state.x+1}、上から${state.y+1}マス。
+    ${["東","南","西","北"][state.dir]}むき。
+    ゴールは左から${def.goal.x+1}、上から${def.goal.y+1}マス。
+  </desc>
+  <rect width="760" height="520" fill="url(#sky)"/>
+  <ellipse cx="570" cy="175" rx="240" ry="210" fill="url(#light)"/>
+  <g opacity=".65" fill="#fff">
+    <path d="M74 105h32V89h39v10h31v17H74Z"/>
+    <path d="M562 83h25V66h40v9h29v18h-94Z"/>
+    <path d="M602 196h28v-13h28v8h22v15h-78Z"/>
+  </g>
+  <g opacity=".45">
+    <path d="m5 262 100-53 89 43-100 54Z" fill="#ccdfbb"/>
+    <path d="m604 271 74-38 87 43-73 37Z" fill="#d0dfba"/>
+    <path d="m155 385 61-32 56 27-62 34Z" fill="#d9e6c2"/>
+  </g>
+  <ellipse cx="380" cy="427" rx="232" ry="29"
+    fill="#7c976a" opacity=".17" filter="url(#shadow)"/>`;
+
+  let tiles="",objects="";
+
+  for(let sum=0;sum<=12;sum++){
+    for(let y=0;y<7;y++){
+      const x=sum-y;
+      if(x<0||x>6)continue;
+
+      const [cx,cy]=xy(x,y);
+      const tile=groundMap[y][x];
+      const water=tile==="~",bridge=tile==="=";
+
+      const colors=water?
+        ["#77bcb9","#639da0","#528c95"]:
+        bridge?
+        ["#c9a572","#977b58","#846b4c"]:
+        (x+y)%2?
+        ["#a6ce7b","#8c9870","#76875f"]:
+        ["#b4d68b","#97a276","#7e8f65"];
+
+      let shape=cube(cx,cy,43,22,25,...colors);
+
+      if(!water&&!bridge){
+        shape+=
+          `<path d="m${cx-43} ${cy+9} 13 7v6l11 6v-6l19 10v-10l-43-22Z" `+
+          `fill="#86a95f" opacity=".7"/>`+
+          `<path d="m${cx+43} ${cy+9}-14 7v6l-11 6v-6l-18 10v-10l43-22Z" `+
+          `fill="#749b57" opacity=".7"/>`;
+      }
+
+      if(water){
+        shape+=
+          `<path d="m${cx-20} ${cy-2} 14 7m11-10 15 7" `+
+          `stroke="#c4e5dc" stroke-width="2" opacity=".6" fill="none"/>`;
+      }
+
+      if(bridge){
+        shape+=
+          `<path d="m${cx-26} ${cy-13} 43 22m-52-13 43 22m-17-35 43 22" `+
+          `stroke="#aa875d" fill="none" stroke-width="2"/>`;
+      }
+
+      if(!water&&!bridge&&(x*3+y*5)%4===0){
+        shape+=
+          `<path d="m${cx-7} ${cy-5} 8-4 8 4-8 4Z" `+
+          `fill="#c5e09e" opacity=".8"/>`;
+      }
+
+      if(state.visited.has(E.key(x,y))&&!(x===state.x&&y===state.y)){
+        shape+=
+          `<ellipse cx="${cx}" cy="${cy}" rx="5" ry="2.8" `+
+          `fill="#759759" opacity=".7"/>`;
+      }
+
+      if(x===def.goal.x&&y===def.goal.y){
+        shape+=
+          `<path d="m${cx} ${cy-16} 31 16-31 16-31-16Z" `+
+          `fill="#f3d576" fill-opacity=".45" stroke="#c9a43e" stroke-width="2"/>`+
+          `<path d="m${cx} ${cy-8} 16 8-16 8-16-8Z" `+
+          `fill="#f5d471" stroke="#b99437"/>`+
+          `<path d="M${cx} ${cy-6}v12m-10-6h20" `+
+          `stroke="#fff1b6" stroke-width="2"/>`;
+      }
+
+      if(showNumbers){
+        shape+=
+          `<text x="${cx}" y="${cy+4}" text-anchor="middle" `+
+          `font-family="system-ui,sans-serif" font-size="10" `+
+          `fill="#385f46" pointer-events="none">${x+1},${y+1}</text>`;
+      }
+
+      tiles+=
+        `<g class="tile" data-tile="${x},${y}" `+
+        (editing?
+          `tabindex="0" role="button" aria-label="${x+1},${y+1} を編集"`:"")+
+        `>${shape}</g>`;
+
+      let object="";
+
+      if(tile==="#"||tile==="B"){
+        object+=cube(
+          cx,cy-31,27,14,34,
+          ...(tile==="#"?
+            ["#b4bdb4","#89978d","#6c8078"]:
+            ["#d9b482","#bd9064","#aa7b51"])
+        );
+        object+=tile==="#"?
+          `<path d="m${cx-11} ${cy-35} 10-5 8 4-10 5Z" fill="#d8e0d2"/>`+
+          `<path d="m${cx+10} ${cy-14} 7-4v8l-7 4Z" fill="#91b5a1"/>`+
+          `<path d="m${cx-21} ${cy-20} 7 4v6l-7-4Z" fill="#71877d"/>`:
+          `<path d="M${cx} ${cy-17}v31m-27-27 27 14 27-14" `+
+          `stroke="#946a49" fill="none" opacity=".65"/>`;
+      }
+
+      if(state.gems.has(E.key(x,y))){
+        const gy=cy-(object?56:24);
+        object+=
+          `<g><path d="m${cx} ${gy-14} 13 9v12l-13 11-13-11v-12Z" `+
+          `fill="#74b8ac" stroke="#519a95" stroke-width="1.4"/>`+
+          `<path d="m${cx} ${gy-14}v32l-13-11v-12Z" fill="#ade0ca"/>`+
+          `<path d="m${cx} ${gy-14} 13 9-13 7-13-7Z" fill="#d1f0d9"/>`+
+          `<path d="m${cx-2} ${gy-17} 2-5 2 5 5 2-5 2-2 5-2-5-5-2Z" `+
+          `fill="#fffce9"/></g>`;
+      }
+
+      if(x===state.x&&y===state.y){
+        const [dx,dy]=[[43,22],[-43,22],[-43,-22],[43,-22]][state.dir];
+        const ax=cx+dx*.65,ay=cy+dy*.65;
+        const vx=dx*.18,vy=dy*.18;
+
+        object+=
+          `<g class="robot"><ellipse cx="${cx}" cy="${cy+4}" rx="20" ry="10" `+
+          `fill="#456745" opacity=".19"/>`+
+          `<path d="M${ax+vx} ${ay+vy} L${ax-vy} ${ay+vx} L${ax+vy} ${ay-vx}Z" `+
+          `fill="#fffbed" stroke="#9da96a" stroke-width="1.3"/>`;
+
+        object+=
+          cube(cx-8,cy-7,7,4,10,"#536e72","#49626a","#3b5663")+
+          cube(cx+8,cy-7,7,4,10,"#536e72","#49626a","#3b5663")+
+          cube(cx,cy-26,17,9,21,"#9ab493","#758e7a","#547c72")+
+          cube(cx,cy-51,22,12,23,"#efdb9f","#d3b77f","#b69869");
+
+        object+=
+          `<path d="m${cx-18} ${cy-49} 15 8v10l-15-8Z" fill="#355e5b"/>`+
+          `<path d="m${cx+3} ${cy-41} 16-9v10l-16 9Z" fill="#294d4e"/>`+
+          `<path d="m${cx-14} ${cy-46} 4 2v5l-4-2Zm9 5 4 2v5l-4-2Z" fill="#c9f1d3"/>`+
+          `<path d="m${cx+8} ${cy-41} 4-2v5l-4 2Z" fill="#94ccba"/>`+
+          `<path d="M${cx} ${cy-63}v-7" stroke="#6b896f" stroke-width="3"/>`+
+          `<rect x="${cx-3}" y="${cy-75}" width="6" height="6" rx="1" fill="#e7b958"/>`+
+          `<path d="m${cx-11} ${cy-24} 9 5v6l-9-5Z" fill="#d7d99e"/></g>`;
+      }
+
+      objects+=`<g pointer-events="none">${object}</g>`;
+    }
+  }
+
+  $("world").innerHTML=back+tiles+objects;
+  $("direction-label").textContent=editing?
+    "タップで島をつくろう":
+    directions[state.dir]+" むいている方が「前」";
+}
+
+$("lesson").innerHTML=[...E.LEVELS,E.SANDBOX].map((l,i)=>
+  `<option value="${i}">`+
+  `${i===12?"∞":String(i+1).padStart(2,"0")} ${l.title}</option>`
+).join("");
+
+$("lesson").onchange=()=>loadLevel($("lesson").value);
+
+$("player").onchange=()=>{
+  data.active=Number($("player").value);
+  loadLevel(data.profiles[data.active].level);
+};
+
+$("palette").onclick=event=>{
+  const b=event.target.closest("[data-add]");
+  if(b){
+    edit(()=>{
+      const n=E.newNode(b.dataset.add);
+      (E.findList(program,target)||program).push(n);
+      if(n.body)target=n.id;
+    });
+  }
+};
+
+$("program").onclick=event=>{
+  const b=event.target.closest("button");
+  if(!b||mode==="running")return;
+
+  if(b.hasAttribute("data-target")){
+    target=b.dataset.target;
+    renderProgram();
+    return;
+  }
+
+  for(const op of ["up","down","remove"]){
+    if(b.dataset[op]){
+      edit(()=>{
+        const loc=E.findNode(program,b.dataset[op]);
+        if(!loc)return;
+        if(op==="remove"){
+          loc.list.splice(loc.index,1);
+        }else{
+          const i=loc.index+(op==="up"?-1:1);
+          if(i>=0&&i<loc.list.length){
+            [loc.list[i],loc.list[loc.index]]=
+              [loc.list[loc.index],loc.list[i]];
+          }
+        }
+      });
+      return;
+    }
+  }
+};
+
+$("program").onchange=event=>{
+  const b=event.target;
+  if(b.dataset.count){
+    edit(()=>{
+      E.findNode(program,b.dataset.count).node.count=Number(b.value);
+    });
+  }
+  if(b.dataset.condition){
+    edit(()=>{
+      E.findNode(program,b.dataset.condition).node.condition=b.value;
+    });
+  }
+};
+
+$("run").onclick=run;
+
+$("step").onclick=()=>{
+  if(mode==="running")return;
+  if(mode!=="paused"||!runner)
+    if(!prepare())return;
+  mode="paused";
+  advance();
+};
+
+$("reset").onclick=()=>reset();
+
+$("undo").onclick=()=>{
+  if(mode==="running"||!history.length)return;
+  program=history.pop();
+  target="";
+  profile.programs[def.id]=E.clone(program);
+  reset(true);
+  renderProgram();
+  save();
+};
+
+$("clear").onclick=()=>edit(()=>{
+  program=[];
+  target="";
+});
+
+$("next").onclick=()=>loadLevel(index>=11?0:index+1);
+
+$("hint").onclick=()=>{
+  stop();
+  status();
+  message("✧ ヒント\n"+def.hint);
+};
+
+$("numbers").onchange=()=>{
+  showNumbers=$("numbers").checked;
+  renderWorld();
+};
+
+$("editing").onchange=()=>reset(true);
+
+$("restore").onclick=()=>{
+  if(confirm("編集した島を最初にもどします。プログラムは残ります。")){
+    profile.world=null;
+    def={...E.SANDBOX};
+    reset(true);
+    save();
+  }
+};
+
+$("world").onclick=event=>{
+  const tile=event.target.closest("[data-tile]");
+  if(tile)paint(...tile.dataset.tile.split(",").map(Number));
+};
+
+$("world").onkeydown=event=>{
+  if(event.key!=="Enter"&&event.key!==" ")return;
+  const tile=event.target.closest("[data-tile]");
+  if(tile){
+    event.preventDefault();
+    const pos=tile.dataset.tile;
+    paint(...pos.split(",").map(Number));
+    $("world").querySelector('[data-tile="'+pos+'"]')?.focus();
+  }
+};
+
+$("export").onclick=()=>{
+  save();
+  const a=document.createElement("a");
+  const url=URL.createObjectURL(
+    new Blob([JSON.stringify(data,null,2)],{type:"application/json"})
+  );
+  a.href=url;
+  a.download="block-quest-save.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+};
+
+$("import").onclick=()=>{
+  stop();
+  status();
+  $("import-file").click();
+};
+
+$("import-file").onchange=async event=>{
+  const file=event.target.files[0];
+  event.target.value="";
+  if(!file)return;
+
+  try{
+    if(file.size>500000)throw new Error();
+    const incoming=E.parseSave(JSON.parse(await file.text()));
+    if(confirm("2人分のセーブを、このファイルの内容に入れかえますか？")){
+      data=incoming;
+      loadLevel(data.profiles[data.active].level);
+    }
+  }catch(_){
+    notify("Block Quest のセーブファイルをえらんでね。");
+  }
+};
+
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){
+    stop();
+    status();
+  }
+});
+
+window.addEventListener("pagehide",save);
+loadLevel(data.profiles[data.active].level);
+})();
+</script>
+</body>
+</html>
